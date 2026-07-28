@@ -103,7 +103,7 @@
 </style>
 </head>
 <body>
-  <div class="topbar"><h1 id="pageTitle">总览</h1><div class="date" id="todayLabel"></div><button id="logoutBtn" class="x-btn" style="display:none" data-act="logout">退出</button></div>
+  <div class="topbar"><h1 id="pageTitle">总览</h1><div class="date" id="todayLabel"></div></div>
   <div class="wrap" id="app"></div>
   <div class="fab" data-act="fab">＋</div>
   <nav id="nav">
@@ -113,19 +113,7 @@
     <div class="tab" data-act="tab" data-arg="hobby"><span class="e">🎨</span>爱好</div>
   </nav>
   <div class="mask" id="modal"></div>
-  <div id="login" class="mask" style="display:none;align-items:center;justify-content:center;background:var(--bg)">
-    <div class="card" style="max-width:340px;margin:0 16px">
-      <div class="sec-title" style="margin:0 0 10px">登录工作台</div>
-      <div class="hint" style="margin:0 0 12px">用邮箱注册一个账号，数据会同步到云端，换手机也不丢。未联网时也能用，会自动留本地备份。</div>
-      <label class="fld"><span>邮箱</span><input id="lgEmail" type="email" placeholder="you@example.com"></label>
-      <label class="fld"><span>密码（至少6位）</span><input id="lgPass" type="password" placeholder=""></label>
-      <div class="modal-foot" style="padding:8px 0 0"><button class="btn ghost" data-act="signup">注册</button><button class="btn primary" data-act="login">登录</button></div>
-      <div id="lgMsg" class="hint" style="margin-top:8px"></div>
-    </div>
-  </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
 <script>
 /* ===== 工具 ===== */
 const $ = s => document.querySelector(s);
@@ -138,85 +126,16 @@ function gapDays(s){if(!s)return 999;const diff=Math.floor((new Date()-parseDate
 function fmtMoney(x){const n=Math.round((x||0)*10)/10;return '¥'+n.toLocaleString('zh-CN',{maximumFractionDigits:1});}
 function shortDate(s){return s.slice(5);}
 
-/* ===== 配置（在 config.js 中填写你的 Supabase 地址和 anon key） ===== */
+/* ===== 存储层（纯本地） ===== */
 const KEY='pwb:v4';
-const SB=(typeof SUPABASE_CONFIG!=='undefined')?SUPABASE_CONFIG:{url:'',anonKey:''};
-
-/* ===== 存储层：登录后用 Supabase 云端，未登录用本地（并作为云端的离线缓存） ===== */
 const StorageAdapter={
-  mode:'local', client:null, userId:null,
-  async init(){
-    if(!SB.url||!SB.anonKey){ this.ready=true; return; }
-    try{
-      if(!window.supabase) throw new Error('supabase 库未加载（请确认 supabase.min.js 已随项目部署）');
-      this.client=window.supabase.createClient(SB.url,SB.anonKey);
-      const {data}=await this.client.auth.getSession();
-      if(data.session){ this.mode='cloud'; this.userId=data.session.user.id; }
-      this.client.auth.onAuthStateChange(async (_e,s)=>{
-        if(s&&s.user){ this.mode='cloud'; this.userId=s.user.id; hideLogin(); showLogout(true); await DB.load(); maybeNotify(); render(); }
-        else { this.mode='local'; this.userId=null; store=null; showLogout(false); showLogin(); }
-      });
-    }catch(e){
-      console.error('Supabase 初始化失败：', e);
-      this.client=null; // 留给登录/注册函数给出明确提示，不中断页面其它功能
-    }
-    this.ready=true;
-  },
-  async get(k){
-    if(this.mode==='cloud'&&this.client){
-      const {data}=await this.client.from('workbench').select('data').eq('user_id',this.userId).maybeSingle();
-      if(data&&data.data!=null) return JSON.stringify(data.data);
-    }
-    return localStorage.getItem(KEY+':'+k);
-  },
-  async set(k,v){
-    localStorage.setItem(KEY+':'+k,v);
-    if(this.mode==='cloud'&&this.client){
-      try{ const {error}=await this.client.from('workbench').upsert({user_id:this.userId,data:JSON.parse(v),updated_at:new Date().toISOString()},{onConflict:'user_id'}); if(error)console.warn('云同步失败(已暂存本地):',error.message); }
-      catch(e){ console.warn('云同步失败(已暂存本地):',e.message); }
-    }
-    return Promise.resolve();
-  }
+  mode:'local',
+  async init(){ this.ready=true; },
+  get(k){ return Promise.resolve(localStorage.getItem(KEY+':'+k)); },
+  set(k,v){ localStorage.setItem(KEY+':'+k, v); return Promise.resolve(); }
 };
 
-/* ===== 登录 ===== */
-function showLogin(){const el=document.getElementById('login');if(el)el.style.display='flex';}
-function hideLogin(){const el=document.getElementById('login');if(el)el.style.display='none';}
-function showLogout(on){const b=document.getElementById('logoutBtn');if(b)b.style.display=on?'inline-block':'none';}
-function errMsg(e){return (e&&e.message)?e.message:String(e);}
-/* 登录/注册：反馈与网络诊断辅助 */
-function setMsg(s){const el=document.getElementById('lgMsg');if(el)el.textContent=s;}
-function setBusy(b){
-  ['signup','login'].forEach(a=>{const btn=document.querySelector('[data-act="'+a+'"]');if(btn){if(b)btn.dataset.label=btn.textContent;btn.disabled=b;btn.textContent=b?'处理中…':(btn.dataset.label||btn.textContent);}});
-}
-function withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);}
-function isNetErr(e){const m=(e&&e.message||'').toLowerCase();return m.includes('failed to fetch')||m.includes('networkerror')||m.includes('load failed')||m.includes('timeout')||m.includes('network request failed');}
-async function doLogin(){
-  if(!StorageAdapter.client){setMsg('Supabase 未初始化，请检查 config.js 或网络');return;}
-  const email=document.getElementById('lgEmail').value.trim(),pass=document.getElementById('lgPass').value;
-  if(!email||!pass){setMsg('请先填写邮箱和密码');return;}
-  setBusy(true);
-  try{
-    const {error}=await withTimeout(StorageAdapter.client.auth.signInWithPassword({email,password}),15000);
-    if(error)setMsg('登录失败：'+errMsg(error));
-    else setMsg('登录成功，正在加载…');
-  }catch(e){ setMsg(isNetErr(e)?'登录失败：无法连接 Supabase 服务器（国内网络常连不上，请检查网络或用代理）':'登录失败：'+errMsg(e)); }
-  finally{ setBusy(false); }
-}
-async function doSignup(){
-  if(!StorageAdapter.client){setMsg('Supabase 未初始化，请检查 config.js 或网络');return;}
-  const email=document.getElementById('lgEmail').value.trim(),pass=document.getElementById('lgPass').value;
-  if(!email||!pass){setMsg('请先填写邮箱和密码');return;}
-  if(pass.length<6){setMsg('密码至少6位');return;}
-  setBusy(true);
-  try{
-    const {error}=await withTimeout(StorageAdapter.client.auth.signUp({email,password}),15000);
-    if(error)setMsg('注册失败：'+errMsg(error));
-    else setMsg('注册成功！如收到验证邮件请先点开确认，再登录。');
-  }catch(e){ setMsg(isNetErr(e)?'注册失败：无法连接 Supabase 服务器（国内网络常连不上，请检查网络或用代理）':'注册失败：'+errMsg(e)); }
-  finally{ setBusy(false); }
-}
-async function doLogout(){ if(StorageAdapter.client) await StorageAdapter.client.auth.signOut(); }
+/* 纯本地模式，无登录界面 */
 let store=null;
 const DB={async load(){const raw=await StorageAdapter.get('data');if(raw){try{store=JSON.parse(raw);migrate();}catch(e){store=seed();}}else store=seed();},async save(){await StorageAdapter.set('data',JSON.stringify(store));}};
 function migrate(){ // 兼容 v3 旧数据补字段
@@ -638,9 +557,6 @@ document.addEventListener('click',e=>{
   else if(act==='bookDone'){const h=store.hobby.hobbies.find(x=>x.type==='reading'&&x.books.some(b=>b.id===arg));const b=h.books.find(x=>x.id===arg);b.status=b.status==='done'?'reading':'done';saveAndRender();}
   else if(act==='bookDelete'){const h=store.hobby.hobbies.find(x=>x.type==='reading'&&x.books.some(b=>b.id===arg));h.books=h.books.filter(b=>b.id!==arg);saveAndRender();}
   else if(act==='toggleNotify'){toggleNotify();}
-  else if(act==='login'){doLogin();}
-  else if(act==='signup'){doSignup();}
-  else if(act==='logout'){doLogout();}
 });
 
 /* 中断提醒通知 */
@@ -657,9 +573,7 @@ function maybeNotify(){
 /* ===== 启动 ===== */
 (async function init(){
   await StorageAdapter.init();
-  if(StorageAdapter.mode==='cloud'){ hideLogin(); showLogout(true); await DB.load(); maybeNotify(); render(); }
-  else if(SB.url && SB.anonKey){ showLogin(); showLogout(false); }
-  else { await DB.load(); maybeNotify(); render(); } // 未配置 Supabase：退回纯本地模式（和升级前一致）
+  await DB.load(); maybeNotify(); render();
   if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 })();
 </script>
