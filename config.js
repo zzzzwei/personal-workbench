@@ -11,6 +11,6 @@
 //  填好并重新部署后，打开 APP 会要求用邮箱注册/登录，数据就同步到云端了。
 // ============================================================
 const SUPABASE_CONFIG = {
-  url:     '',
-  anonKey: ''
+  url:     'https://cudrzlumftuuqnzsfuri.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1ZHJ6bHVtZnR1dXFuenNmdXJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxOTE3NTAsImV4cCI6MjEwMDc2Nzc1MH0.t1-k6EunPhEWrATpad7FMfFJu9vf2QKW0pTbm3Z1kkM'
 };
