@@ -178,21 +178,37 @@ function showLogin(){const el=document.getElementById('login');if(el)el.style.di
 function hideLogin(){const el=document.getElementById('login');if(el)el.style.display='none';}
 function showLogout(on){const b=document.getElementById('logoutBtn');if(b)b.style.display=on?'inline-block':'none';}
 function errMsg(e){return (e&&e.message)?e.message:String(e);}
+/* 登录/注册：反馈与网络诊断辅助 */
+function setMsg(s){const el=document.getElementById('lgMsg');if(el)el.textContent=s;}
+function setBusy(b){
+  ['signup','login'].forEach(a=>{const btn=document.querySelector('[data-act="'+a+'"]');if(btn){if(b)btn.dataset.label=btn.textContent;btn.disabled=b;btn.textContent=b?'处理中…':(btn.dataset.label||btn.textContent);}});
+}
+function withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);}
+function isNetErr(e){const m=(e&&e.message||'').toLowerCase();return m.includes('failed to fetch')||m.includes('networkerror')||m.includes('load failed')||m.includes('timeout')||m.includes('network request failed');}
 async function doLogin(){
-  if(!StorageAdapter.client){document.getElementById('lgMsg').textContent='Supabase 未初始化，请检查 config.js 或网络';return;}
+  if(!StorageAdapter.client){setMsg('Supabase 未初始化，请检查 config.js 或网络');return;}
   const email=document.getElementById('lgEmail').value.trim(),pass=document.getElementById('lgPass').value;
-  if(!email||!pass){document.getElementById('lgMsg').textContent='请填写邮箱和密码';return;}
-  const {error}=await StorageAdapter.client.auth.signInWithPassword({email,password});
-  if(error)document.getElementById('lgMsg').textContent='登录失败：'+errMsg(error);
+  if(!email||!pass){setMsg('请先填写邮箱和密码');return;}
+  setBusy(true);
+  try{
+    const {error}=await withTimeout(StorageAdapter.client.auth.signInWithPassword({email,password}),15000);
+    if(error)setMsg('登录失败：'+errMsg(error));
+    else setMsg('登录成功，正在加载…');
+  }catch(e){ setMsg(isNetErr(e)?'登录失败：无法连接 Supabase 服务器（国内网络常连不上，请检查网络或用代理）':'登录失败：'+errMsg(e)); }
+  finally{ setBusy(false); }
 }
 async function doSignup(){
-  if(!StorageAdapter.client){document.getElementById('lgMsg').textContent='Supabase 未初始化，请检查 config.js 或网络';return;}
+  if(!StorageAdapter.client){setMsg('Supabase 未初始化，请检查 config.js 或网络');return;}
   const email=document.getElementById('lgEmail').value.trim(),pass=document.getElementById('lgPass').value;
-  if(!email||!pass){document.getElementById('lgMsg').textContent='请填写邮箱和密码';return;}
-  if(pass.length<6){document.getElementById('lgMsg').textContent='密码至少6位';return;}
-  const {error}=await StorageAdapter.client.auth.signUp({email,password});
-  if(error)document.getElementById('lgMsg').textContent='注册失败：'+errMsg(error);
-  else document.getElementById('lgMsg').textContent='注册成功！如收到验证邮件请先点开确认，再登录。';
+  if(!email||!pass){setMsg('请先填写邮箱和密码');return;}
+  if(pass.length<6){setMsg('密码至少6位');return;}
+  setBusy(true);
+  try{
+    const {error}=await withTimeout(StorageAdapter.client.auth.signUp({email,password}),15000);
+    if(error)setMsg('注册失败：'+errMsg(error));
+    else setMsg('注册成功！如收到验证邮件请先点开确认，再登录。');
+  }catch(e){ setMsg(isNetErr(e)?'注册失败：无法连接 Supabase 服务器（国内网络常连不上，请检查网络或用代理）':'注册失败：'+errMsg(e)); }
+  finally{ setBusy(false); }
 }
 async function doLogout(){ if(StorageAdapter.client) await StorageAdapter.client.auth.signOut(); }
 let store=null;
