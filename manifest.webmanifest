@@ -1,0 +1,15 @@
+{
+  "name": "个人工作台",
+  "short_name": "工作台",
+  "description": "理财 / 身体 / 爱好 个人追踪",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6f9",
+  "theme_color": "#2f6bff",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
