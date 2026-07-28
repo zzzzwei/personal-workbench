@@ -147,13 +147,19 @@ const StorageAdapter={
   mode:'local', client:null, userId:null,
   async init(){
     if(!SB.url||!SB.anonKey){ this.ready=true; return; }
-    this.client=window.supabase.createClient(SB.url,SB.anonKey);
-    const {data}=await this.client.auth.getSession();
-    if(data.session){ this.mode='cloud'; this.userId=data.session.user.id; }
-    this.client.auth.onAuthStateChange(async (_e,s)=>{
-      if(s&&s.user){ this.mode='cloud'; this.userId=s.user.id; hideLogin(); showLogout(true); await DB.load(); maybeNotify(); render(); }
-      else { this.mode='local'; this.userId=null; store=null; showLogout(false); showLogin(); }
-    });
+    try{
+      if(!window.supabase) throw new Error('supabase 库未加载（请确认 supabase.min.js 已随项目部署）');
+      this.client=window.supabase.createClient(SB.url,SB.anonKey);
+      const {data}=await this.client.auth.getSession();
+      if(data.session){ this.mode='cloud'; this.userId=data.session.user.id; }
+      this.client.auth.onAuthStateChange(async (_e,s)=>{
+        if(s&&s.user){ this.mode='cloud'; this.userId=s.user.id; hideLogin(); showLogout(true); await DB.load(); maybeNotify(); render(); }
+        else { this.mode='local'; this.userId=null; store=null; showLogout(false); showLogin(); }
+      });
+    }catch(e){
+      console.error('Supabase 初始化失败：', e);
+      this.client=null; // 留给登录/注册函数给出明确提示，不中断页面其它功能
+    }
     this.ready=true;
   },
   async get(k){
