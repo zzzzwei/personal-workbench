@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>个人工作台</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1f2733; --sub:#7b8794;
+    --line:#e7ebf0; --brand:#2f6bff; --brand-soft:#eaf0ff;
+    --up:#e23b3b; --down:#13a463; --warn:#f0a020;
+    --shadow:0 2px 10px rgba(20,40,80,.06);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;max-width:480px;margin:0 auto;min-height:100vh}
+  .topbar{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 16px 6px;display:flex;align-items:baseline;justify-content:space-between}
+  .topbar h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.5px}
+  .topbar .date{font-size:12px;color:var(--sub)}
+  .wrap{padding:6px 14px 90px}
+  .card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .metric-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+  .mcard{background:var(--card);border-radius:14px;padding:12px 8px;box-shadow:var(--shadow);text-align:center}
+  .mcard .ml{font-size:12px;color:var(--sub);font-weight:600}
+  .mcard .mv{font-size:19px;font-weight:700;margin:3px 0 1px;letter-spacing:.3px}
+  .mcard .ms{font-size:10px;color:var(--sub)}
+  .chart-mini{margin-top:12px}
+  .stat-label{font-size:12px;color:var(--sub);margin-bottom:4px}
+  .stat-val{font-size:22px;font-weight:700;letter-spacing:.3px}
+  .up{color:var(--up)} .down{color:var(--down)} .muted{color:var(--sub)}
+  .pill-row{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch}
+  .pill{flex:0 0 auto;padding:7px 13px;border-radius:999px;background:#eef1f6;color:var(--sub);font-size:13px;font-weight:600;white-space:nowrap}
+  .pill.on{background:var(--brand);color:#fff}
+  .sec-title{font-size:15px;font-weight:700;margin:4px 2px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .sec-title .sub{font-size:12px;color:var(--sub);font-weight:500}
+  .row{display:flex;align-items:center;justify-content:space-between;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .l{display:flex;align-items:center;gap:10px;min-width:0}
+  .row .ic{font-size:18px;width:26px;text-align:center}
+  .row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .meta{font-size:11px;color:var(--sub)}
+  .row .r{text-align:right;flex:0 0 auto;display:flex;align-items:center;gap:8px}
+  .amt{font-weight:700}
+  .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .b-ok{background:#e4f7ed;color:var(--down)} .b-bad{background:#fdeaea;color:var(--up)}
+  .b-none{background:#eef1f6;color:var(--sub)} .b-done{background:var(--brand-soft);color:var(--brand)}
+  .b-reading{background:#fff3e0;color:var(--warn)} .b-pin{background:#efeaff;color:#7b54e0}
+  .b-warn{background:#fdeaea;color:var(--up)}
+  .btn{border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.ghost{background:#eef1f6;color:var(--ink)}
+  .btn.sm{padding:6px 11px;font-size:13px}
+  .btn.green{background:#e4f7ed;color:var(--down)}
+  .btn.red{background:#fdeaea;color:var(--up)}
+  .btn.warn{background:#fff3e0;color:var(--warn)}
+  .x-btn{border:none;background:#f4f6f9;color:var(--sub);border-radius:8px;font-size:12px;padding:4px 8px;cursor:pointer}
+  .fab{position:fixed;right:18px;bottom:74px;width:54px;height:54px;border-radius:50%;background:var(--brand);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(47,107,255,.4);z-index:30;cursor:pointer}
+  .mini-bars{display:flex;gap:5px;align-items:flex-end;height:34px;margin-top:6px}
+  .mini-bars .b{flex:1;border-radius:3px 3px 0 0;min-height:4px}
+  .progress{height:9px;border-radius:999px;background:#eef1f6;overflow:hidden;margin-top:8px}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,#2f6bff,#5b8bff);border-radius:999px}
+  .hint{font-size:11px;color:var(--sub);margin-top:8px;line-height:1.5}
+  .reminder{background:#fdeaea;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--up);font-weight:600}
+  .reminder .ri{font-size:12px;font-weight:500;color:#b34;margin-top:2px}
+  nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--line);display:flex;z-index:25}
+  nav .tab{flex:1;text-align:center;padding:8px 0 9px;color:var(--sub);font-size:11px;cursor:pointer}
+  nav .tab .e{font-size:20px;display:block;line-height:1.2}
+  nav .tab.on{color:var(--brand);font-weight:700}
+  .mask{position:fixed;inset:0;background:rgba(15,25,45,.45);z-index:40;display:none;align-items:flex-end;justify-content:center}
+  .mask.show{display:flex}
+  .modal{width:100%;max-width:480px;background:#fff;border-radius:18px 18px 0 0;max-height:86vh;overflow:auto;animation:up .22s ease}
+  @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:translateY(0);opacity:1}}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px;font-weight:700;font-size:16px;position:sticky;top:0;background:#fff}
+  .modal-head .x{border:none;background:none;font-size:24px;color:var(--sub);cursor:pointer;line-height:1}
+  .modal-body{padding:4px 16px 8px}
+  .modal-foot{padding:8px 16px 18px;display:flex;gap:10px}
+  .modal-foot .btn{flex:1}
+  .fld{display:block;margin:10px 0}
+  .fld > span{display:block;font-size:12px;color:var(--sub);margin-bottom:5px}
+  .fld input,.fld select,.fld textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#fbfcfe;color:var(--ink);font-family:inherit}
+  .fld textarea{min-height:64px;resize:vertical}
+  .kv{display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px}
+  .kv:last-child{border-bottom:none}
+  .kv .k{color:var(--sub)} .kv .v{font-weight:600}
+  .book{display:flex;align-items:center;justify-content:space-between;padding:10px 2px;border-bottom:1px solid var(--line);gap:8px}
+  .book:last-child{border-bottom:none}
+  .book .bi{min-width:0;flex:1}
+  .book .bn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .book .ba{font-size:11px;color:var(--sub)}
+  .book .bbtns{display:flex;gap:5px;flex:0 0 auto}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+  .chip{padding:7px 12px;border-radius:10px;background:#eef1f6;font-size:13px;font-weight:600;color:var(--sub);cursor:pointer}
+  .chip.on{background:var(--brand);color:#fff}
+  .chip.cam{background:#eaf0ff;color:var(--brand)}
+  .empty{text-align:center;color:var(--sub);font-size:13px;padding:18px 0}
+  .shot-prev{max-width:100%;border-radius:10px;margin-top:8px;border:1px solid var(--line)}
+  .tracker{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+  .tracker .th{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+</style>
+</head>
+<body>
+  <div class="topbar"><h1 id="pageTitle">总览</h1><div class="date" id="todayLabel"></div></div>
+  <div class="wrap" id="app"></div>
+  <div class="fab" data-act="fab">＋</div>
+  <nav id="nav">
+    <div class="tab on" data-act="tab" data-arg="overview"><span class="e">🏠</span>总览</div>
+    <div class="tab" data-act="tab" data-arg="finance"><span class="e">💰</span>理财</div>
+    <div class="tab" data-act="tab" data-arg="body"><span class="e">💪</span>身体</div>
+    <div class="tab" data-act="tab" data-arg="hobby"><span class="e">🎨</span>爱好</div>
+  </nav>
+  <div class="mask" id="modal"></div>
+
+<script>
+/* ===== 工具 ===== */
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2,9);
+function fmt(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${da}`;}
+function today(){return fmt(new Date());}
+function lastNDates(n){const a=[];const t=new Date();for(let i=n-1;i>=0;i--){const d=new Date(t);d.setDate(t.getDate()-i);a.push(fmt(d));}return a;}
+function parseDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function gapDays(s){if(!s)return 999;const diff=Math.floor((new Date()-parseDate(s))/86400000);return diff;}
+function fmtMoney(x){const n=Math.round((x||0)*10)/10;return '¥'+n.toLocaleString('zh-CN',{maximumFractionDigits:1});}
+function shortDate(s){return s.slice(5);}
+
+/* ===== 存储层（抽象，预留云端同步） ===== */
+const KEY='pwb:v4';
+const StorageAdapter={mode:'local',get(k){return Promise.resolve(localStorage.getItem(KEY+':'+k));},set(k,v){localStorage.setItem(KEY+':'+k,v);return Promise.resolve();}};
+let store=null;
+const DB={async load(){const raw=await StorageAdapter.get('data');if(raw){try{store=JSON.parse(raw);migrate();}catch(e){store=seed();}}else store=seed();},async save(){await StorageAdapter.set('data',JSON.stringify(store));}};
+function migrate(){ // 兼容 v3 旧数据补字段
+  store.finance=store.finance||{};store.finance.pinnedFunds=store.finance.pinnedFunds||[];
+  store.settings=store.settings||{notify:false};
+  (store.finance.stocks||[]).forEach(s=>{s.pinned=s.pinned||false;});
+  (store.hobby.hobbies||[]).forEach(h=>{if(h.lastDate===undefined)h.lastDate=today();});
+}
+
+/* ===== 种子数据 ===== */
+function seed(){
+  return {
+    finance:{
+      pinnedFunds:['红利低波ETF'],
+      stocks:[
+        {id:uid(),name:'瑞芯微',code:'603893',pinned:true,
+          buys:[{id:uid(),date:'2026-07-20',amount:20000}],
+          pnls:[{id:uid(),date:'2026-07-26',amount:380},{id:uid(),date:'2026-07-24',amount:-210},{id:uid(),date:'2026-07-23',amount:150}],
+          divs:[{id:uid(),date:'2026-06-10',amount:240}]},
+        {id:uid(),name:'云铝股份',code:'000807',pinned:false,
+          buys:[{id:uid(),date:'2026-07-15',amount:12000}],
+          pnls:[{id:uid(),date:'2026-07-26',amount:150},{id:uid(),date:'2026-07-22',amount:-80}],
+          divs:[{id:uid(),date:'2026-05-20',amount:90}]}
+      ],
+      funds:[
+        {id:uid(),name:'红利低波ETF',date:'2026-07-26',kind:'pnl',amount:120},
+        {id:uid(),name:'科创50联接',date:'2026-07-26',kind:'pnl',amount:-60},
+        {id:uid(),name:'红利低波ETF',date:'2026-07-24',kind:'pnl',amount:90},
+        {id:uid(),name:'红利低波ETF',date:'2026-06-30',kind:'div',amount:75}
+      ],
+      salaries:[{id:uid(),date:'2026-07-10',amount:15000,note:'月薪'},{id:uid(),date:'2026-06-10',amount:15000,note:'月薪'}],
+      others:[{id:uid(),date:'2026-07-05',amount:3000,note:'兼职'}],
+      expenses:[
+        {id:uid(),date:'2026-07-22',amount:320,cat:'餐饮',note:'聚餐'},
+        {id:uid(),date:'2026-07-18',amount:1200,cat:'购物',note:'衣服'},
+        {id:uid(),date:'2026-07-08',amount:260,cat:'交通',note:'打车'}
+      ]
+    },
+    body:{habits:[
+      {id:uid(),name:'步数',icon:'🚶',unit:'步',target:8000,records:{}},
+      {id:uid(),name:'运动',icon:'🏃',unit:'分钟',target:30,records:{}},
+      {id:uid(),name:'睡眠',icon:'😴',unit:'小时',target:7,records:{}}
+    ]},
+    hobby:{hobbies:[
+      {id:uid(),name:'阅读',icon:'📚',type:'reading',hours:18,lastDate:'2026-07-24',
+        books:[
+          {id:uid(),name:'漫步投资',author:'约翰·博格',status:'reading',hours:6,lastDate:'2026-07-24'},
+          {id:uid(),name:'聪明投资者',author:'格雷厄姆',status:'done',hours:12,lastDate:'2026-07-20'}
+        ]},
+      {id:uid(),name:'健身',icon:'💪',type:'generic',hours:18,lastDate:today()}
+    ]},
+    learning:[
+      {id:uid(),name:'场内 / 场外基金',note:'ETF 场内交易 vs 支付宝场外申购',status:'done'},
+      {id:uid(),name:'宽基 vs 行业指数',note:'科创50、沪深300、恒生科技',status:'done'},
+      {id:uid(),name:'红利低波策略',note:'因子策略：高股息+低波动',status:'doing'},
+      {id:uid(),name:'CPO / PCB 产业链',note:'AI 算力硬件链',status:'doing'},
+      {id:uid(),name:'盘面语言',note:'阳线/阴线、封板、轮动、高潮=卖点',status:'doing'},
+      {id:uid(),name:'资金跷跷板',note:'存量再配置、边际定价、情绪正反馈',status:'todo'},
+      {id:uid(),name:'瑞芯微个股研究',note:'端侧 SoC，forward ~49x 观察',status:'todo'}
+    ],
+    settings:{notify:false}
+  };
+}
+
+/* ===== 理财计算 ===== */
+function yestPnlDate(){const dates=[];store.finance.stocks.forEach(s=>s.pnls.forEach(p=>dates.push(p.date)));store.finance.funds.forEach(f=>{if(f.kind==='pnl')dates.push(f.date);});return dates.length?dates.sort().slice(-1)[0]:null;}
+function yestPnl(){const d=yestPnlDate();if(!d)return 0;let s=0;store.finance.stocks.forEach(st=>st.pnls.forEach(p=>{if(p.date===d)s+=p.amount;}));store.finance.funds.forEach(f=>{if(f.kind==='pnl'&&f.date===d)s+=f.amount;});return s;}
+function netAssetsSeries(){const flows=[];const add=(date,amt)=>flows.push({date,amt});store.finance.salaries.forEach(x=>add(x.date,x.amount));store.finance.others.forEach(x=>add(x.date,x.amount));store.finance.expenses.forEach(x=>add(x.date,-x.amount));store.finance.stocks.forEach(st=>{st.divs.forEach(d=>add(d.date,d.amount));st.pnls.forEach(p=>add(p.date,p.amount));});store.finance.funds.forEach(f=>add(f.date,f.amount));flows.sort((a,b)=>a.date<b.date?-1:1);let cum=0;const series=[];flows.forEach(f=>{cum+=f.amt;series.push({date:f.date,val:Math.round(cum*10)/10});});return series;}
+function netAssetsNow(){const s=netAssetsSeries();return s.length?s[s.length-1].val:0;}
+
+/* ===== 折线图 ===== */
+function lineChart(series, compact){
+  if(!series||series.length<2)return `<div class="empty">记录更多收支数据后，这里显示净资产趋势</div>`;
+  const W=330,H=compact?56:120,pl=compact?4:36,pr=compact?4:8,pt=compact?6:10,pb=compact?4:18;
+  const vals=series.map(d=>d.val);let min=Math.min(...vals),max=Math.max(...vals);if(min===max){min-=1;max+=1;}
+  const x=i=>pl+(W-pl-pr)*(i/(series.length-1));const y=v=>pt+(H-pt-pb)*(1-(v-min)/(max-min));
+  const pts=series.map((d,i)=>`${x(i).toFixed(1)},${y(d.val).toFixed(1)}`).join(' ');
+  const area=`${pl},${H-pb} ${pts} ${W-pr},${H-pb}`;const last=series[series.length-1];
+  const labels=compact?'':`<text x="${pl}" y="${H-4}" font-size="10" fill="#7b8794">${series[0].date.slice(5)}</text>
+    <text x="${W-pr}" y="${H-4}" font-size="10" fill="#7b8794" text-anchor="end">${last.date.slice(5)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block"><line x1="${pl}" y1="${y(max)}" x2="${W-pr}" y2="${y(max)}" stroke="#eef1f6"/>
+    <polygon points="${area}" fill="rgba(47,107,255,.10)"/><polyline points="${pts}" fill="none" stroke="#2f6bff" stroke-width="${compact?1.6:2.2}" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(series.length-1)}" cy="${y(last.val)}" r="${compact?2.4:3.4}" fill="#2f6bff"/>
+    ${labels}</svg>`;
+}
+
+/* ===== K 线缩略图（由每日盈亏合成蜡烛） ===== */
+function klineSVG(pnls){
+  if(!pnls||pnls.length<1)return `<div class="empty" style="padding:8px">暂无盈亏记录</div>`;
+  const arr=[...pnls].sort((a,b)=>a.date<b.date?-1:1);
+  let prev=0;const cs=arr.map(p=>{const o=prev;const c=prev+p.amount;const hi=Math.max(o,c)+Math.abs(p.amount)*0.35;const lo=Math.min(o,c)-Math.abs(p.amount)*0.35;prev=c;return {o,c,hi,lo};});
+  const all=[].concat(...cs.map(c=>[c.hi,c.lo]));let mn=Math.min(...all),mx=Math.max(...all);if(mn===mx){mn-=1;mx+=1;}
+  const W=300,H=64,pad=4;const x=i=>pad+(W-2*pad)*(i/(cs.length-1||1));const y=v=>pad+(H-2*pad)*(1-(v-mn)/(mx-mn));
+  let body='';
+  cs.forEach((c,i)=>{const up=c.c>=c.o;const col=up?'#e23b3b':'#13a463';const xx=x(i);const w=Math.max(2,(W-2*pad)/cs.length*0.5);
+    body+=`<line x1="${xx.toFixed(1)}" y1="${y(c.hi).toFixed(1)}" x2="${xx.toFixed(1)}" y2="${y(c.lo).toFixed(1)}" stroke="${col}" stroke-width="1"/>
+      <rect x="${(xx-w/2).toFixed(1)}" y="${Math.min(y(c.o),y(c.c)).toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(1,Math.abs(y(c.o)-y(c.c))).toFixed(1)}" fill="${col}"/>`;});
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">${body}</svg>`;
+}
+
+/* ===== 身体计算 ===== */
+function habitStatus(h,date){const v=h.records[date];if(v===undefined)return null;return v>=h.target;}
+function habitStreak(h){let streak=0;const d=new Date();if(h.records[today()]===undefined)d.setDate(d.getDate()-1);let g=0;while(g++<4000){const ds=fmt(d);const v=h.records[ds];if(v===undefined||v<h.target)break;streak++;d.setDate(d.getDate()-1);}return streak;}
+function lastLogged(h){const ds=Object.keys(h.records).sort();return ds.length?ds[ds.length-1]:null;}
+function habitBroken(h){return gapDays(lastLogged(h))>=1;} // 今天未打卡即提醒
+
+/* ===== 渲染 ===== */
+let curTab='overview',finMod='stock';
+function render(){
+  $('#pageTitle').textContent={overview:'总览',finance:'理财',body:'身体',hobby:'爱好'}[curTab];
+  $('#todayLabel').textContent=today();
+  document.querySelectorAll('#nav .tab').forEach(t=>t.classList.toggle('on',t.dataset.arg===curTab));
+  const app=$('#app');
+  if(curTab==='overview')app.innerHTML=viewOverview();
+  else if(curTab==='finance')app.innerHTML=viewFinance();
+  else if(curTab==='body')app.innerHTML=viewBody();
+  else if(curTab==='hobby')app.innerHTML=viewHobby();
+}
+
+function viewOverview(){
+  const net=netAssetsNow(),yp=yestPnl(),bd=bodyToday();
+  const readH=store.hobby.hobbies.filter(h=>h.type==='reading').reduce((a,h)=>a+h.hours,0);
+  const genH=store.hobby.hobbies.filter(h=>h.type!=='reading').reduce((a,h)=>a+h.hours,0);
+  return `
+  <div class="metric-row">
+    <div class="mcard"><div class="ml">理财</div><div class="mv ${yp>0?'up':yp<0?'down':''}">${yp>0?'+':yp<0?'−':''}${fmtMoney(Math.abs(yp))}</div><div class="ms">昨日涨跌</div></div>
+    <div class="mcard"><div class="ml">身体</div><div class="mv">${bd.ok}<span class="ms" style="font-size:13px">/${bd.total}</span></div><div class="ms">今日达标</div></div>
+    <div class="mcard"><div class="ml">爱好</div><div class="mv">${(readH+genH).toFixed(1)}<span class="ms" style="font-size:13px">h</span></div><div class="ms">累计小时</div></div>
+  </div>
+  <div class="card"><div class="stat-label">净资产（自动计算 = 累计收入 − 支出）</div><div class="stat-val">${fmtMoney(net)}</div></div>
+  <div class="card"><div class="sec-title">理财 · 昨日涨跌 Top<span class="sub">点底部＋记账</span></div>${stockFundPnlRows()}</div>
+  ${renderTrackers(true)}
+  <div class="card"><div class="sec-title">身体 · 今日打卡<span class="sub">达标为正 / 未达标为负</span></div>
+    ${store.body.habits.map(h=>{
+      const st=habitStatus(h,today());const badge=st===true?`<span class="badge b-ok">达标 +</span>`:st===false?`<span class="badge b-bad">未达标 −</span>`:`<span class="badge b-none">未打卡</span>`;
+      const v=h.records[today()];const broken=habitBroken(h);
+      const rem=broken?`<span class="badge b-warn">⚠ ${gapDays(lastLogged(h))}天未打卡</span>`:'';
+      return `<div class="row" data-act="bodyAdd" data-arg="${h.id}"><div class="l"><span class="ic">${h.icon}</span><div><div class="nm">${h.name}</div><div class="meta">目标 ${h.target}${h.unit}${v!==undefined?` · 今日 ${v}${h.unit}`:''}</div></div></div><div class="r">${rem}${badge}</div></div>`;
+    }).join('')}
+  </div>`;
+}
+function bodyToday(){let ok=0;store.body.habits.forEach(h=>{if(habitStatus(h,today())===true)ok++;});return {ok,total:store.body.habits.length};}
+function stockFundPnlRows(){
+  const d=yestPnlDate();if(!d)return `<div class="empty">暂无昨日盈亏记录</div>`;
+  const rows=[];store.finance.stocks.forEach(st=>st.pnls.filter(p=>p.date===d).forEach(p=>rows.push({nm:st.name,amt:p.amount})));
+  store.finance.funds.filter(f=>f.kind==='pnl'&&f.date===d).forEach(f=>rows.push({nm:f.name,amt:f.amount}));
+  if(!rows.length)return `<div class="empty">暂无昨日盈亏记录</div>`;
+  return rows.map(r=>`<div class="row"><div class="l"><span class="nm">${r.nm}</span></div><div class="r"><span class="amt ${r.amt>0?'up':r.amt<0?'down':''}">${r.amt>0?'+':r.amt<0?'−':''}${fmtMoney(Math.abs(r.amt))}</span></div></div>`).join('');
+}
+function renderTrackers(compact){
+  const stocks=store.finance.stocks.filter(s=>s.pinned);
+  const fundNames=store.finance.pinnedFunds||[];
+  if(!stocks.length&&!fundNames.length)return '';
+  let html=`<div class="card"><div class="sec-title">常驻追踪<span class="sub">K线缩略</span></div>`;
+  stocks.forEach(s=>{
+    const buy=s.buys.reduce((a,b)=>a+b.amount,0),div=s.divs.reduce((a,b)=>a+b.amount,0),pnl=s.pnls.reduce((a,b)=>a+b.amount,0),rate=buy?div/buy*100:0;
+    html+=`<div class="tracker"><div class="th"><div><span class="nm" style="font-weight:700">${s.name}</span> <span class="meta">${s.code}</span>${s.pinned?' <span class="badge b-pin">常驻</span>':''}</div><div class="amt ${pnl>0?'up':pnl<0?'down':''}">${pnl>0?'+':pnl<0?'−':''}${fmtMoney(Math.abs(pnl))}</div></div>
+      ${klineSVG(s.pnls)}
+      <div class="meta" style="margin-top:4px">买入 ${fmtMoney(buy)} · 分红 ${fmtMoney(div)} · 分红/买入 ${rate.toFixed(1)}%</div></div>`;
+  });
+  fundNames.forEach(fn=>{
+    const recs=store.finance.funds.filter(f=>f.name===fn);const pnl=recs.filter(f=>f.kind==='pnl').reduce((a,f)=>a+f.amount,0),div=recs.filter(f=>f.kind==='div').reduce((a,f)=>a+f.amount,0);
+    html+=`<div class="tracker"><div class="th"><div><span class="nm" style="font-weight:700">${fn}</span> <span class="badge b-pin">常驻</span></div><div class="amt ${pnl>0?'up':pnl<0?'down':''}">${pnl>0?'+':pnl<0?'−':''}${fmtMoney(Math.abs(pnl))}</div></div>
+      ${klineSVG(recs.filter(f=>f.kind==='pnl'))}
+      <div class="meta" style="margin-top:4px">累计盈亏 ${fmtMoney(pnl)} · 分红 ${fmtMoney(div)}</div></div>`;
+  });
+  html+=`</div>`;return html;
+}
+
+function viewFinance(){
+  const net=netAssetsNow(),yp=yestPnl();
+  const mods=[['stock','股票'],['fund','基金及理财'],['salary','工资'],['other','其他收入'],['expense','支出'],['learning','学习进度']];
+  return `
+  <div class="card"><div class="stat-label">净资产（自动计算 = 累计收入 − 支出）</div><div class="stat-val">${fmtMoney(net)}</div>
+    <div class="row" style="padding:10px 0 0;border:none"><div><div class="stat-label">昨日理财涨跌</div><div class="stat-val ${yp>0?'up':yp<0?'down':''}" style="font-size:18px">${yp>0?'+':yp<0?'−':''}${fmtMoney(Math.abs(yp))}</div></div><div class="muted" style="font-size:12px;text-align:right">含股票+基金<br>每日盈亏</div></div>
+    <div class="chart-mini">${lineChart(netAssetsSeries(), true)}</div>
+  </div>
+  ${renderTrackers(false)}
+  <div class="pill-row">${mods.map(m=>`<div class="pill ${finMod===m[0]?'on':''}" data-act="fmod" data-arg="${m[0]}">${m[1]}</div>`).join('')}</div>
+  ${finMod==='stock'?viewStockList():finMod==='fund'?viewFund():finMod==='salary'?viewIncome('salary'):finMod==='other'?viewIncome('other'):finMod==='expense'?viewExpense():viewLearning()}`;
+}
+function viewStockList(){
+  return `<div class="card"><div class="sec-title">股票<span class="sub">点单只看明细</span></div>
+    ${store.finance.stocks.map(s=>{
+      const buy=s.buys.reduce((a,b)=>a+b.amount,0),div=s.divs.reduce((a,b)=>a+b.amount,0),pnl=s.pnls.reduce((a,b)=>a+b.amount,0),rate=buy?div/buy*100:0;
+      return `<div class="row" data-act="stockDetail" data-arg="${s.id}"><div class="l"><span class="ic">📈</span><div><div class="nm">${s.name} ${s.pinned?'<span class="badge b-pin">常驻</span>':''}</div><div class="meta">${s.code} · 买入 ${fmtMoney(buy)}</div></div></div>
+        <div class="r"><div style="text-align:right"><div class="amt ${pnl>0?'up':pnl<0?'down':''}">${pnl>0?'+':pnl<0?'−':''}${fmtMoney(Math.abs(pnl))}</div><div class="meta">分红 ${rate.toFixed(1)}%</div></div>
+        <button class="x-btn" data-act="stockDelete" data-arg="${s.id}">删除</button></div></div>`;
+    }).join('')||'<div class="empty">还没有股票，点右下角＋添加</div>'}
+  </div>`;
+}
+function viewFund(){
+  const pnl=store.finance.funds.filter(f=>f.kind==='pnl').reduce((a,f)=>a+f.amount,0),div=store.finance.funds.filter(f=>f.kind==='div').reduce((a,f)=>a+f.amount,0);
+  const names=[...new Set(store.finance.funds.map(f=>f.name))];
+  return `<div class="card"><div class="kv"><span class="k">累计盈亏</span><span class="v ${pnl>0?'up':pnl<0?'down':''}">${pnl>0?'+':pnl<0?'−':''}${fmtMoney(Math.abs(pnl))}</span></div><div class="kv"><span class="k">累计分红</span><span class="v">${fmtMoney(div)}</span></div>
+    <div class="sec-title" style="margin-top:10px">基金</div>
+    ${names.map(n=>{const pin=(store.finance.pinnedFunds||[]).includes(n);return `<div class="row"><div class="l"><span class="nm">${n}</span></div><div class="r"><button class="x-btn" data-act="fundPin" data-arg="${n}">${pin?'取消常驻':'常驻'}</button></div></div>`;}).join('')}
+    <div class="sec-title" style="margin-top:8px">记录</div>
+    ${store.finance.funds.map(f=>`<div class="row"><div class="l"><span class="nm">${f.name}</span><span class="meta">${f.date} · ${f.kind==='pnl'?'盈亏':'分红'}</span></div><div class="r"><span class="amt ${f.kind==='pnl'?(f.amount>0?'up':f.amount<0?'down':''):''}">${f.amount>0&&f.kind==='pnl'?'+':f.amount<0&&f.kind==='pnl'?'−':''}${fmtMoney(Math.abs(f.amount))}</span></div></div>`).join('')||'<div class="empty">暂无记录</div>'}
+  </div>`;
+}
+function viewIncome(kind){const arr=store.finance[kind],sum=arr.reduce((a,x)=>a+x.amount,0);return `<div class="card"><div class="kv"><span class="k">累计${kind==='salary'?'工资':'其他收入'}</span><span class="v up">${fmtMoney(sum)}</span></div>
+    ${arr.map(x=>`<div class="row"><div class="l"><span class="nm">${x.note||'—'}</span><span class="meta">${x.date}</span></div><div class="r"><span class="amt up">+${fmtMoney(x.amount)}</span></div></div>`).join('')||'<div class="empty">暂无记录</div>'}</div>`;}
+function viewExpense(){
+  const arr=store.finance.expenses,sum=arr.reduce((a,x)=>a+x.amount,0);
+  return `<div class="card"><div class="kv"><span class="k">累计支出</span><span class="v down">${fmtMoney(sum)}</span></div>
+    <div class="chip-row"><div class="chip cam" data-act="shotExpense">📷 截图识别</div></div>
+    ${arr.map(x=>`<div class="row"><div class="l"><span class="nm">${x.cat}</span><span class="meta">${x.date} · ${x.note||''}</span></div><div class="r"><span class="amt down">−${fmtMoney(x.amount)}</span></div></div>`).join('')||'<div class="empty">暂无记录</div>'}
+  </div>`;
+}
+function viewLearning(){
+  const done=store.learning.filter(l=>l.status==='done').length,rate=store.learning.length?Math.round(done/store.learning.length*100):0;
+  return `<div class="card"><div class="kv"><span class="k">已完成 / 共</span><span class="v">${done} / ${store.learning.length}（${rate}%）</span></div><div class="progress" style="margin-bottom:6px"><i style="width:${rate}%"></i></div>
+    ${store.learning.map(l=>{const b=l.status==='done'?`<span class="badge b-done">已完成</span>`:l.status==='doing'?`<span class="badge b-reading">学习中</span>`:`<span class="badge b-none">待开始</span>`;return `<div class="row" data-act="learnToggle" data-arg="${l.id}"><div class="l"><div><div class="nm">${l.name}</div><div class="meta">${l.note||''}</div></div></div><div class="r">${b}</div></div>`;}).join('')}
+    <div class="hint">点条目循环切换：待开始 → 学习中 → 已完成</div></div>`;
+}
+
+/* 股票详情 */
+function openStockDetail(id){
+  const s=store.finance.stocks.find(x=>x.id===id);if(!s)return;
+  const buy=s.buys.reduce((a,b)=>a+b.amount,0),div=s.divs.reduce((a,b)=>a+b.amount,0),pnl=s.pnls.reduce((a,b)=>a+b.amount,0),rate=buy?div/buy*100:0;
+  const rec=(title,arr,key,sign)=>`<div class="sec-title" style="margin-top:8px">${title}</div>${arr.map(r=>`<div class="row"><div class="l"><span class="meta">${r.date}</span></div><div class="r"><span class="amt ${sign&&r.amount<0?'down':sign&&r.amount>0?'up':''}">${sign?(r.amount>0?'+':r.amount<0?'−':''):''}${fmtMoney(Math.abs(r.amount))}</span><button class="x-btn" data-act="recDelete" data-arg="${id}" data-rec="${r.id}" data-rk="${key}">×</button></div></div>`).join('')||'<div class="empty">暂无</div>'}`;
+  const html=`<div class="modal-head"><span>${s.name} · ${s.code}</span><button class="x" data-act="closeModal">×</button></div>
+  <div class="modal-body">
+    <div class="kv"><span class="k">总买入成本</span><span class="v">${fmtMoney(buy)}</span></div>
+    <div class="kv"><span class="k">累计盈亏</span><span class="v ${pnl>0?'up':pnl<0?'down':''}">${pnl>0?'+':pnl<0?'−':''}${fmtMoney(Math.abs(pnl))}</span></div>
+    <div class="kv"><span class="k">总分红</span><span class="v">${fmtMoney(div)}</span></div>
+    <div class="kv"><span class="k">分红 / 买入</span><span class="v ${rate>0?'up':''}">${rate.toFixed(2)}%</span></div>
+    <div class="chip-row"><div class="chip" data-act="stockPin" data-arg="${s.id}">${s.pinned?'取消常驻':'设为常驻追踪'}</div></div>
+    <div class="sec-title" style="margin-top:8px">买入记录 <span class="chip cam" data-act="shotBuy" data-arg="${s.id}" style="display:inline-block">📷</span></div>
+    ${rec('买入',s.buys,'buys',false)}
+    <div class="sec-title" style="margin-top:8px">每日盈亏 <span class="chip cam" data-act="shotPnl" data-arg="${s.id}" style="display:inline-block">📷</span></div>
+    ${rec('盈亏',s.pnls,'pnls',true)}
+    <div class="sec-title" style="margin-top:8px">分红 / 股息 <span class="chip cam" data-act="shotDiv" data-arg="${s.id}" style="display:inline-block">📷</span></div>
+    ${rec('分红',s.divs,'divs',false)}
+    <div class="chip-row">
+      <div class="chip" data-act="addBuy" data-arg="${s.id}">＋ 买入</div>
+      <div class="chip" data-act="addPnl" data-arg="${s.id}">＋ 昨日盈亏</div>
+      <div class="chip" data-act="addDiv" data-arg="${s.id}">＋ 分红</div>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="btn ghost" data-act="closeModal">关闭</button></div>`;
+  showModal(html);
+}
+
+/* 身体 */
+function viewBody(){
+  const broken=store.body.habits.filter(habitBroken);
+  const remHtml=broken.length?`<div class="reminder">⚠️ 中断提醒：有 ${broken.length} 个习惯今天还没打卡
+    <div class="ri">${broken.map(h=>`${h.name}（${gapDays(lastLogged(h))}天未打卡）`).join('；')}</div></div>`:'';
+  return `${remHtml}<div class="card"><div class="hint" style="margin:0 0 6px">设定目标，每天记录实际值：达到目标为正（绿），未达到为负（红）。可新增 / 删除习惯。</div>
+    ${store.body.habits.map(h=>{
+      const st=habitStatus(h,today());const badge=st===true?`<span class="badge b-ok">达标 +</span>`:st===false?`<span class="badge b-bad">未达标 −</span>`:`<span class="badge b-none">未打卡</span>`;
+      const streak=habitStreak(h);const v=h.records[today()];const brokenH=habitBroken(h);
+      const bars=lastNDates(7).map(ds=>{const vv=h.records[ds];let c='#eef1f6',ht=4;if(vv!==undefined){const r=h.target?Math.min(vv/h.target,1.4):1;ht=4+Math.round(r*26);c=vv>=h.target?'#13a463':'#e23b3b';}return `<div class="b" style="height:${ht}px;background:${c}" title="${ds.slice(5)}: ${vv!==undefined?vv+'/'+h.target:'未打卡'}"></div>`;}).join('');
+      return `<div class="row" style="display:block"><div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="l"><span class="ic">${h.icon}</span><div><div class="nm">${h.name}</div><div class="meta">目标 ${h.target}${h.unit}${v!==undefined?` · 今日 ${v}${h.unit}`:''}${streak?` · 🔥${streak}天`:''}${brokenH?` · <span style="color:var(--up)">${gapDays(lastLogged(h))}天未打卡</span>`:''}</div></div></div>
+        <div style="display:flex;gap:6px;align-items:center">${badge}<span class="btn sm ghost" data-act="habitEdit" data-arg="${h.id}" style="padding:4px 9px">设置</span><button class="x-btn" data-act="habitDelete" data-arg="${h.id}">删除</button></div>
+      </div><div class="mini-bars">${bars}</div><button class="btn primary sm" style="width:100%;margin-top:8px" data-act="bodyAdd" data-arg="${h.id}">记录今日</button></div>`;
+    }).join('')||'<div class="empty">还没有习惯，点右下角＋新增</div>'}
+    <button class="btn ghost sm" style="width:100%" data-act="toggleNotify">${store.settings.notify?'🔔 中断提醒(系统通知)已开':'🔔 开启中断提醒通知'}</button>
+  </div>`;
+}
+
+/* 爱好 */
+function viewHobby(){
+  const remHtml=store.hobby.hobbies.filter(h=>gapDays(h.lastDate)>=1).map(h=>`${h.name}（${gapDays(h.lastDate)}天未记录）`).join('；');
+  const rem=remHtml?`<div class="reminder">⚠️ 爱好中断提醒：${remHtml}</div>`:'';
+  return `${rem}<div class="card">${store.hobby.hobbies.map(h=>{
+    const pct=Math.min(100,h.hours/1000*100);
+    if(h.type==='reading'){
+      return `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div class="sec-title" style="margin:0 0 6px">${h.icon} ${h.name} <span class="sub">${h.hours.toFixed(1)} / 1000 h${gapDays(h.lastDate)>=1?` · <span style="color:var(--up)">${gapDays(h.lastDate)}天未记录</span>`:''}</span></div>
+        <div class="progress"><i style="width:${pct}%"></i></div>
+        <div style="margin-top:8px">${h.books.map(b=>{const bb=b.status==='done'?`<span class="badge b-done">读完</span>`:`<span class="badge b-reading">在读</span>`;return `<div class="book"><div class="bi"><div class="bn">${b.name}</div><div class="ba">${b.author} · ${b.hours}h</div></div>
+          <div class="bbtns">${bb}<span class="btn sm green" data-act="bookHour" data-arg="${b.id}" data-val="0.5">+0.5</span><span class="btn sm green" data-act="bookHour" data-arg="${b.id}" data-val="1">+1</span><span class="btn sm ghost" data-act="bookDone" data-arg="${b.id}">${b.status==='done'?'重读':'读完'}</span><button class="x-btn" data-act="bookDelete" data-arg="${b.id}">×</button></div></div>`;}).join('')}</div>
+        <button class="btn ghost sm" style="width:100%;margin-top:8px" data-act="bookAdd" data-arg="${h.id}">＋ 添加书籍</button>
+        <button class="x-btn" style="margin-top:6px" data-act="hobbyDelete" data-arg="${h.id}">删除该爱好</button>
+      </div>`;
+    }
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div class="sec-title" style="margin:0 0 6px">${h.icon} ${h.name} <span class="sub">${h.hours.toFixed(1)} / 1000 h${gapDays(h.lastDate)>=1?` · <span style="color:var(--up)">${gapDays(h.lastDate)}天未记录</span>`:''}</span></div>
+      <div class="progress"><i style="width:${pct}%"></i></div>
+      <div class="bbtns" style="margin-top:8px;justify-content:flex-end"><span class="btn sm green" data-act="hobbyAdd" data-arg="${h.id}" data-val="0.5">+0.5 小时</span><span class="btn sm green" data-act="hobbyAdd" data-arg="${h.id}" data-val="1">+1 小时</span></div>
+      <button class="x-btn" style="margin-top:6px" data-act="hobbyDelete" data-arg="${h.id}">删除该爱好</button>
+    </div>`;
+  }).join('')||'<div class="empty">还没有爱好，点右下角＋新增</div>'}</div>`;
+}
+
+/* ===== 弹窗与表单 ===== */
+function showModal(html){const m=$('#modal');m.innerHTML=`<div class="modal">${html}</div>`;m.classList.add('show');}
+function closeModal(){$('#modal').classList.remove('show');$('#modal').innerHTML='';}
+function openForm(cfg){
+  const fields=cfg.fields.map(f=>{
+    if(f.type==='select'){const o=f.options.map(x=>`<option value="${x.v}" ${x.v===f.default?'selected':''}>${x.t}</option>`).join('');return `<label class="fld"><span>${f.label}</span><select data-k="${f.key}">${o}</select></label>`;}
+    if(f.type==='date')return `<label class="fld"><span>${f.label}</span><input type="date" data-k="${f.key}" value="${f.default||today()}"></label>`;
+    return `<label class="fld"><span>${f.label}</span><input type="${f.type||'text'}" data-k="${f.key}" value="${f.default||''}" placeholder="${f.placeholder||''}"></label>`;
+  }).join('');
+  const html=`<div class="modal-head"><span>${cfg.title}</span><button class="x" data-act="closeModal">×</button></div><div class="modal-body">${fields}</div><div class="modal-foot"><button class="btn ghost" data-act="closeModal">取消</button><button class="btn primary" id="formSubmit">保存</button></div>`;
+  showModal(html);
+  document.getElementById('formSubmit').onclick=()=>{const vals={};document.querySelectorAll('#modal [data-k]').forEach(el=>vals[el.dataset.k]=el.value);cfg.onSubmit(vals);closeModal();saveAndRender();};
+}
+async function saveAndRender(){await DB.save();render();}
+
+/* ===== 截图识别 ===== */
+let _tesseractLoading=null;
+function loadTesseract(){
+  if(window.Tesseract)return Promise.resolve(window.Tesseract);
+  if(_tesseractLoading)return _tesseractLoading;
+  _tesseractLoading=new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload=()=>res(window.Tesseract);s.onerror=()=>rej(new Error('load fail'));
+    document.body.appendChild(s);
+  });
+  return _tesseractLoading;
+}
+async function recognizeText(dataUrl){
+  const T=await loadTesseract();const worker=await T.createWorker('chi_sim+eng');
+  const {data:{text}}=await worker.recognize(dataUrl);await worker.terminate();return text;
+}
+function parseShot(text,kind){
+  const out={date:'',amount:''};
+  const dm=text.match(/(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/)||text.match(/(\d{1,2})[-/.](\d{1,2})/);
+  if(dm){out.date=dm[1].length===4?`${dm[1]}-${dm[2].padStart(2,'0')}-${dm[3].padStart(2,'0')}`:`${new Date().getFullYear()}-${dm[1].padStart(2,'0')}-${dm[2].padStart(2,'0')}`;}
+  const nums=[...text.matchAll(/[¥￥]?\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)/g)].map(m=>parseFloat(m[1].replace(/,/g,''))).filter(n=>!isNaN(n));
+  if(nums.length)out.amount=String(Math.max(...nums));
+  if(kind==='expense'){const m=text.match(/([\u4e00-\u9fa5]{2,6})/);if(m)out.note=m[1];}
+  return out;
+}
+function openShotModal(kind,stockId){
+  const titles={buy:'截图识别 · 买入',pnl:'截图识别 · 昨日盈亏',div:'截图识别 · 分红',expense:'截图识别 · 支出'};
+  const extraField=kind==='expense'?`<label class="fld"><span>分类/商户</span><input data-k="note" placeholder="如 餐饮/星巴克"></label>`:'';
+  const html=`<div class="modal-head"><span>${titles[kind]}</span><button class="x" data-act="closeModal">×</button></div>
+  <div class="modal-body">
+    <input type="file" id="shotFile" accept="image/*" capture="environment" style="width:100%;margin:6px 0">
+    <div id="shotPrev"></div>
+    <div id="shotStatus" class="hint">选图后点「识别」（需联网加载 OCR，首次较慢；也可直接手动填写）。也可把截图发到对话框让我识别，再把结果粘贴到下方导入。</div>
+    <label class="fld"><span>日期</span><input type="date" data-k="date" value="${today()}"></label>
+    <label class="fld"><span>金额</span><input type="number" data-k="amount" placeholder="识别或手动填写"></label>
+    ${extraField}
+    <label class="fld"><span>导入（粘贴识别结果 JSON，如 [{"date":"2026-07-26","amount":380}]）</span><textarea data-k="import" placeholder="可选：粘贴批量记录"></textarea></label>
+    <div class="chip-row"><div class="chip cam" id="shotRun">📷 识别</div></div>
+  </div>
+  <div class="modal-foot"><button class="btn ghost" data-act="closeModal">取消</button><button class="btn primary" id="shotSave">保存</button></div>`;
+  showModal(html);
+  const fileEl=document.getElementById('shotFile');
+  fileEl.onchange=()=>{const f=fileEl.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{document.getElementById('shotPrev').innerHTML=`<img class="shot-prev" src="${r.result}">`;fileEl._data=r.result;};r.readAsDataURL(f);};
+  document.getElementById('shotRun').onclick=async()=>{
+    const st=document.getElementById('shotStatus');
+    if(!fileEl._data){st.textContent='请先选一张截图';return;}
+    st.textContent='OCR 识别中…（首次需联网加载模型）';
+    try{const txt=await recognizeText(fileEl._data);const p=parseShot(txt,kind);
+      const setV=(k,v)=>{const el=document.querySelector(`#modal [data-k="${k}"]`);if(el&&v)el.value=v;};
+      setV('date',p.date);setV('amount',p.amount);if(kind==='expense')setV('note',p.note);
+      st.textContent='识别完成（请核对金额/日期后保存）：\n'+txt.slice(0,200);
+    }catch(e){st.textContent='识别不可用（需联网或图片不清），请直接手动填写金额与日期。';}
+  };
+  document.getElementById('shotSave').onclick=()=>{
+    const getV=k=>{const el=document.querySelector(`#modal [data-k="${k}"]`);return el?el.value:'';};
+    const applyOne=(rec)=>{
+      const date=rec.date||getV('date')||today();const amt=parseFloat(rec.amount!==undefined?rec.amount:getV('amount'))||0;
+      if(kind==='buy'){const s=store.finance.stocks.find(x=>x.id===stockId);s.buys.push({id:uid(),date,amount:amt});}
+      else if(kind==='pnl'){const s=store.finance.stocks.find(x=>x.id===stockId);s.pnls.push({id:uid(),date,amount:amt});}
+      else if(kind==='div'){const s=store.finance.stocks.find(x=>x.id===stockId);s.divs.push({id:uid(),date,amount:amt});}
+      else if(kind==='expense'){store.finance.expenses.push({id:uid(),amount:amt,date,cat:getV('note')||'其他',note:getV('note')});}
+    };
+    const imp=getV('import').trim();
+    if(imp){try{JSON.parse(imp).forEach(applyOne);}catch(e){alert('导入 JSON 格式错误');return;}}
+    else if(parseFloat(getV('amount'))){applyOne({});}
+    closeModal();if(kind!=='expense'&&stockId)openStockDetail(stockId);else saveAndRender();
+  };
+}
+
+/* ===== FAB 新增 ===== */
+function fabAction(){
+  if(curTab==='finance'){
+    if(finMod==='stock')openForm({title:'添加股票',fields:[{key:'name',label:'名称'},{key:'code',label:'代码'}],onSubmit:v=>{store.finance.stocks.push({id:uid(),name:v.name,code:v.code,pinned:false,buys:[],pnls:[],divs:[]});}});
+    else if(finMod==='fund')openForm({title:'基金及理财记录',fields:[{key:'name',label:'名称'},{key:'date',label:'日期',type:'date'},{key:'kind',label:'类型',type:'select',options:[{v:'pnl',t:'盈亏'},{v:'div',t:'分红'}]},{key:'amount',label:'金额',type:'number'}],onSubmit:v=>{store.finance.funds.push({id:uid(),name:v.name,date:v.date,kind:v.kind,amount:parseFloat(v.amount)||0});}});
+    else if(finMod==='salary'||finMod==='other')openForm({title:finMod==='salary'?'添加工资':'添加其他收入',fields:[{key:'amount',label:'金额',type:'number'},{key:'date',label:'日期',type:'date'},{key:'note',label:'备注'}],onSubmit:v=>{store.finance[finMod].push({id:uid(),amount:parseFloat(v.amount)||0,date:v.date,note:v.note});}});
+    else if(finMod==='expense')openForm({title:'添加支出',fields:[{key:'amount',label:'金额',type:'number'},{key:'date',label:'日期',type:'date'},{key:'cat',label:'分类'},{key:'note',label:'备注'}],onSubmit:v=>{store.finance.expenses.push({id:uid(),amount:parseFloat(v.amount)||0,date:v.date,cat:v.cat,note:v.note});}});
+    else if(finMod==='learning')openForm({title:'添加学习项',fields:[{key:'name',label:'概念'},{key:'note',label:'笔记'}],onSubmit:v=>{store.learning.push({id:uid(),name:v.name,note:v.note,status:'todo'});}});
+  }else if(curTab==='body'){
+    openForm({title:'新增习惯',fields:[{key:'name',label:'名称'},{key:'icon',label:'图标(emoji)',default:'⭐'},{key:'unit',label:'单位',default:'次'},{key:'target',label:'每日目标',type:'number',default:'1'}],onSubmit:v=>{store.body.habits.push({id:uid(),name:v.name,icon:v.icon||'⭐',unit:v.unit||'次',target:parseFloat(v.target)||1,records:{}});}});
+  }else if(curTab==='hobby'){
+    openForm({title:'新增爱好',fields:[{key:'name',label:'名称'},{key:'icon',label:'图标(emoji)',default:'🎯'},{key:'type',label:'模式',type:'select',options:[{v:'generic',t:'计时(1000h)'},{v:'reading',t:'阅读(按书)'}]}],onSubmit:v=>{const h={id:uid(),name:v.name,icon:v.icon||'🎯',type:v.type,hours:0,lastDate:today()};if(v.type==='reading')h.books=[];store.hobby.hobbies.push(h);}});
+  }else{
+    openForm({title:'快速记账',fields:[{key:'kind',label:'类型',type:'select',options:[{v:'salary',t:'工资'},{v:'other',t:'其他收入'},{v:'expense',t:'支出'}]},{key:'amount',label:'金额',type:'number'},{key:'note',label:'备注'}],onSubmit:v=>{if(v.kind==='expense')store.finance.expenses.push({id:uid(),amount:parseFloat(v.amount)||0,date:today(),cat:'其他',note:v.note});else store.finance[v.kind].push({id:uid(),amount:parseFloat(v.amount)||0,date:today(),note:v.note});}});
+  }
+}
+
+/* ===== 事件委托 ===== */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');if(!t)return;
+  const act=t.dataset.act,arg=t.dataset.arg,val=t.dataset.val,rec=t.dataset.rec,rk=t.dataset.rk;
+  if(act==='tab'){curTab=arg;render();}
+  else if(act==='fmod'){finMod=arg;render();}
+  else if(act==='closeModal'){closeModal();}
+  else if(act==='fab'){fabAction();}
+  else if(act==='stockDetail'){openStockDetail(arg);}
+  else if(act==='learnToggle'){const l=store.learning.find(x=>x.id===arg);if(l)l.status=l.status==='todo'?'doing':l.status==='doing'?'done':'todo';saveAndRender();}
+  else if(act==='stockPin'){const s=store.finance.stocks.find(x=>x.id===arg);s.pinned=!s.pinned;saveAndRender();}
+  else if(act==='fundPin'){const pf=store.finance.pinnedFunds;const i=pf.indexOf(arg);if(i>=0)pf.splice(i,1);else pf.push(arg);saveAndRender();}
+  else if(act==='stockDelete'){if(confirm('确定删除该股票及其所有记录？')){store.finance.stocks=store.finance.stocks.filter(x=>x.id!==arg);saveAndRender();}}
+  else if(act==='recDelete'){const s=store.finance.stocks.find(x=>x.id===arg);if(s){const arr=s[rk];if(Array.isArray(arr)){const i=arr.findIndex(r=>r.id===rec);if(i>=0)arr.splice(i,1);}openStockDetail(arg);}}
+  else if(act==='addBuy'){openForm({title:'买入记录',fields:[{key:'date',label:'日期',type:'date'},{key:'amount',label:'成本金额',type:'number'}],onSubmit:v=>{const s=store.finance.stocks.find(x=>x.id===arg);s.buys.push({id:uid(),date:v.date,amount:parseFloat(v.amount)||0});openStockDetail(arg);}});}
+  else if(act==='addPnl'){openForm({title:'昨日盈亏',fields:[{key:'date',label:'日期',type:'date'},{key:'amount',label:'盈亏金额(负数为亏)',type:'number'}],onSubmit:v=>{const s=store.finance.stocks.find(x=>x.id===arg);s.pnls.push({id:uid(),date:v.date,amount:parseFloat(v.amount)||0});openStockDetail(arg);}});}
+  else if(act==='addDiv'){openForm({title:'分红 / 股息',fields:[{key:'date',label:'日期',type:'date'},{key:'amount',label:'金额',type:'number'}],onSubmit:v=>{const s=store.finance.stocks.find(x=>x.id===arg);s.divs.push({id:uid(),date:v.date,amount:parseFloat(v.amount)||0});openStockDetail(arg);}});}
+  else if(act==='shotBuy'){openShotModal('buy',arg);}
+  else if(act==='shotPnl'){openShotModal('pnl',arg);}
+  else if(act==='shotDiv'){openShotModal('div',arg);}
+  else if(act==='shotExpense'){openShotModal('expense');}
+  else if(act==='bodyAdd'){const h=store.body.habits.find(x=>x.id===arg);openForm({title:'记录 '+h.name,fields:[{key:'date',label:'日期',type:'date'},{key:'value',label:'今日实际值 ('+h.unit+')',type:'number'}],onSubmit:v=>{h.records[v.date]=parseFloat(v.value)||0;saveAndRender();}});}
+  else if(act==='habitEdit'){const h=store.body.habits.find(x=>x.id===arg);openForm({title:'设置目标',fields:[{key:'name',label:'名称',default:h.name},{key:'icon',label:'图标',default:h.icon},{key:'unit',label:'单位',default:h.unit},{key:'target',label:'每日目标',type:'number',default:h.target}],onSubmit:v=>{h.name=v.name;h.icon=v.icon;h.unit=v.unit;h.target=parseFloat(v.target)||h.target;saveAndRender();}});}
+  else if(act==='habitDelete'){if(confirm('确定删除该习惯？')){store.body.habits=store.body.habits.filter(x=>x.id!==arg);saveAndRender();}}
+  else if(act==='hobbyAdd'){const h=store.hobby.hobbies.find(x=>x.id===arg);h.hours+=(parseFloat(val)||0);h.lastDate=today();saveAndRender();}
+  else if(act==='hobbyDelete'){if(confirm('确定删除该爱好？')){store.hobby.hobbies=store.hobby.hobbies.filter(x=>x.id!==arg);saveAndRender();}}
+  else if(act==='bookAdd'){const h=store.hobby.hobbies.find(x=>x.id===arg);openForm({title:'添加书籍',fields:[{key:'name',label:'书名'},{key:'author',label:'作者'}],onSubmit:v=>{h.books.push({id:uid(),name:v.name,author:v.author,status:'reading',hours:0,lastDate:today()});saveAndRender();}});}
+  else if(act==='bookHour'){const h=store.hobby.hobbies.find(x=>x.type==='reading'&&x.books.some(b=>b.id===arg));const b=h.books.find(x=>x.id===arg);b.hours+=(parseFloat(val)||0);b.lastDate=today();h.lastDate=today();h.hours+=(parseFloat(val)||0);saveAndRender();}
+  else if(act==='bookDone'){const h=store.hobby.hobbies.find(x=>x.type==='reading'&&x.books.some(b=>b.id===arg));const b=h.books.find(x=>x.id===arg);b.status=b.status==='done'?'reading':'done';saveAndRender();}
+  else if(act==='bookDelete'){const h=store.hobby.hobbies.find(x=>x.type==='reading'&&x.books.some(b=>b.id===arg));h.books=h.books.filter(b=>b.id!==arg);saveAndRender();}
+  else if(act==='toggleNotify'){toggleNotify();}
+});
+
+/* 中断提醒通知 */
+function toggleNotify(){
+  if(!('Notification' in window)){alert('当前环境不支持系统通知，已用应用内「中断提醒」替代。');return;}
+  Notification.requestPermission().then(p=>{store.settings.notify=(p==='granted');saveAndRender();});
+}
+function maybeNotify(){
+  if(store.settings.notify&&'Notification' in window&&Notification.permission==='granted'){
+    store.body.habits.forEach(h=>{if(habitBroken(h)){try{new Notification('中断提醒',{body:h.name+' 今天还没打卡'});}catch(e){}}});
+  }
+}
+
+/* ===== 启动 ===== */
+(async function init(){await DB.load();maybeNotify();render();})();
+</script>
+</body>
+</html>
