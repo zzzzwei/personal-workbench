@@ -199,6 +199,8 @@ let store=null;
 const DB={async load(){const raw=await StorageAdapter.get('data');if(raw){try{store=JSON.parse(raw);migrate();}catch(e){store=seed();}}else store=seed();},async save(){await StorageAdapter.set('data',JSON.stringify(store));}};
 function migrate(){ // 兼容 v3 旧数据补字段
   store.finance=store.finance||{};store.finance.pinnedFunds=store.finance.pinnedFunds||[];
+  store.finance.salary=(store.finance.salary||store.finance.salaries||[]);delete store.finance.salaries;
+  store.finance.other=(store.finance.other||store.finance.others||[]);delete store.finance.others;
   store.settings=store.settings||{notify:false};
   (store.finance.stocks||[]).forEach(s=>{s.pinned=s.pinned||false;});
   (store.hobby.hobbies||[]).forEach(h=>{if(h.lastDate===undefined)h.lastDate=today();});
@@ -225,8 +227,8 @@ function seed(){
         {id:uid(),name:'红利低波ETF',date:'2026-07-24',kind:'pnl',amount:90},
         {id:uid(),name:'红利低波ETF',date:'2026-06-30',kind:'div',amount:75}
       ],
-      salaries:[{id:uid(),date:'2026-07-10',amount:15000,note:'月薪'},{id:uid(),date:'2026-06-10',amount:15000,note:'月薪'}],
-      others:[{id:uid(),date:'2026-07-05',amount:3000,note:'兼职'}],
+      salary:[{id:uid(),date:'2026-07-10',amount:15000,note:'月薪'},{id:uid(),date:'2026-06-10',amount:15000,note:'月薪'}],
+      other:[{id:uid(),date:'2026-07-05',amount:3000,note:'兼职'}],
       expenses:[
         {id:uid(),date:'2026-07-22',amount:320,cat:'餐饮',note:'聚餐'},
         {id:uid(),date:'2026-07-18',amount:1200,cat:'购物',note:'衣服'},
@@ -262,7 +264,7 @@ function seed(){
 /* ===== 理财计算 ===== */
 function yestPnlDate(){const dates=[];store.finance.stocks.forEach(s=>s.pnls.forEach(p=>dates.push(p.date)));store.finance.funds.forEach(f=>{if(f.kind==='pnl')dates.push(f.date);});return dates.length?dates.sort().slice(-1)[0]:null;}
 function yestPnl(){const d=yestPnlDate();if(!d)return 0;let s=0;store.finance.stocks.forEach(st=>st.pnls.forEach(p=>{if(p.date===d)s+=p.amount;}));store.finance.funds.forEach(f=>{if(f.kind==='pnl'&&f.date===d)s+=f.amount;});return s;}
-function netAssetsSeries(){const flows=[];const add=(date,amt)=>flows.push({date,amt});store.finance.salaries.forEach(x=>add(x.date,x.amount));store.finance.others.forEach(x=>add(x.date,x.amount));store.finance.expenses.forEach(x=>add(x.date,-x.amount));store.finance.stocks.forEach(st=>{st.divs.forEach(d=>add(d.date,d.amount));st.pnls.forEach(p=>add(p.date,p.amount));});store.finance.funds.forEach(f=>add(f.date,f.amount));flows.sort((a,b)=>a.date<b.date?-1:1);let cum=0;const series=[];flows.forEach(f=>{cum+=f.amt;series.push({date:f.date,val:Math.round(cum*10)/10});});return series;}
+function netAssetsSeries(){const flows=[];const add=(date,amt)=>flows.push({date,amt});store.finance.salary.forEach(x=>add(x.date,x.amount));store.finance.other.forEach(x=>add(x.date,x.amount));store.finance.expenses.forEach(x=>add(x.date,-x.amount));store.finance.stocks.forEach(st=>{st.divs.forEach(d=>add(d.date,d.amount));st.pnls.forEach(p=>add(p.date,p.amount));});store.finance.funds.forEach(f=>add(f.date,f.amount));flows.sort((a,b)=>a.date<b.date?-1:1);let cum=0;const series=[];flows.forEach(f=>{cum+=f.amt;series.push({date:f.date,val:Math.round(cum*10)/10});});return series;}
 function netAssetsNow(){const s=netAssetsSeries();return s.length?s[s.length-1].val:0;}
 
 /* ===== 折线图 ===== */
