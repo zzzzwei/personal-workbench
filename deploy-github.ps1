@@ -36,8 +36,8 @@ Set-Location $PSScriptRoot
 if (-not (Test-Path .git)) { git init -q }
 git branch -M main
 git add -A
-git commit -qm 'personal workbench' 2>$null
-git remote remove origin 2>$null
+try { git commit -qm 'personal workbench' 2>$null } catch {}
+try { git remote remove origin 2>$null } catch {}
 git remote add origin "https://$u`:$t@$GitHost/$u/$Repo.git"
 git push -u origin main
 
